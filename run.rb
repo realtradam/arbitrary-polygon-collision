@@ -1,9 +1,11 @@
 require 'ruby2d'
 require 'ruby2d/camera'
 
+#DEBUG: used to colour all debug lines unique colours
 $colors = ['blue', 'teal', 'green', 'lime',
            'yellow', 'orange', 'red', 'fuchsia']
 
+#DEBUG: used to draw, store and update debug lines
 class DebugLines
   class <<self
     def [](index)
@@ -16,6 +18,7 @@ class DebugLines
   end
 end
 
+# The coordinates of the 2 shapes being tested for collision
 sv1 = {x1: 275.0 - 275.0, y1: 175.0 - 175.0,
        x2: 375.0 - 275.0, y2: 225.0 - 175.0,
        x3: 300.0 - 275.0, y3: 350.0 - 175.0,
@@ -26,6 +29,7 @@ sv2 = {x1: 200.0, y1: 100.0,
        x3: 100.0, y3: 200.0,
        x4: 100.0, y4: 100.0}
 
+# The 2 shapes being tested for collision
 s1 = Camera::Quad.new(
   **sv1,
   color: 'aqua',
@@ -38,6 +42,7 @@ s2 = Camera::Quad.new(
   z: 10
 )
 
+# Creates edges out using coordinates and then gets the normal
 def build_inverted_edges(shape)
   edges = []
   shape.each_with_index do |vertex_start, index|
@@ -46,28 +51,40 @@ def build_inverted_edges(shape)
     else
       vertex_end = shape[index + 1]
     end
-    edges.push [-vertex_end[1] + vertex_start[1],
+    edges.push [vertex_end[1] - vertex_start[1],
                 -vertex_end[0] + vertex_start[0]]
   end
   edges
 end
 
+# Dot product
 def vecDotProd(a,b)
   return (a[0] * b[0]) + (a[1] * b[1])
 end
 
+# The hitbox logic
 def hitbox_check(shape_a, shape_b)
+
+  # Get normals of both shapes
   inverted = build_inverted_edges(shape_b)
   inverted.concat(build_inverted_edges(shape_a))
-  pp inverted if $i == 0
-  amax = amin = bmin = bmax = nil
+
+  #DEBUG
+  if $i == 0
+    puts
+    puts "debug of inverted edges:"
+    pp inverted
+  end
 
   inverted.each_with_index do |line, line_index|
+
+    # Initialize max and min
     amin = vecDotProd(shape_a.first, line)
     amax = vecDotProd(shape_a.first, line)
     bmin = vecDotProd(shape_b.first, line)
     bmax = vecDotProd(shape_b.first, line)
 
+    # Determine max and min of a_shape
     shape_a.each_with_index do |vertex, vertex_index|
       dot = vecDotProd(vertex, line)
       if dot > amax
@@ -77,6 +94,7 @@ def hitbox_check(shape_a, shape_b)
       end
     end
 
+    # Determine max and min of b_shape
     shape_b.each_with_index do |vertex, vertex_index|
       dot = vecDotProd(vertex, line)
       if dot > bmax
@@ -86,6 +104,9 @@ def hitbox_check(shape_a, shape_b)
       end
     end
 
+    #DEBUG: display the lines, transluscent if they are not "seperating"
+    # If all lines are transluscent then the logic believes the
+    # shapes are colliding
     if line_index < shape_a.length
       DebugLines[line_index].x1 = shape_a[line_index][0]
       DebugLines[line_index].y1 = shape_a[line_index][1]
@@ -108,6 +129,8 @@ def hitbox_check(shape_a, shape_b)
       end
     end
     DebugLines[line_index].color = $colors[line_index % $colors.length]
+
+    #DEBUG: print out line information
     if $i == 0
       puts
       puts $colors[line_index % $colors.length]
@@ -119,17 +142,20 @@ def hitbox_check(shape_a, shape_b)
       puts "(((#{amin} < #{bmax}) && (#{amin} > #{bmin})) || ((#{bmin} < #{amax}) && (#{bmin} > #{amin})))"
     end
     if (((amin <= bmax) && (amin >= bmin)) || ((bmin <= amax) && (bmin >= amin)))
-      DebugLines[line_index].color.a = 0.2# = 'red'
-      #next
+      DebugLines[line_index].color.a = 0.2
     else
-      DebugLines[line_index].color.a = 1.0# = 'green'
+      DebugLines[line_index].color.a = 1.0
+
+      # The logic should end the calculations early once it detects lack of collision
+      # however for debug purposes this is disabled
       #return false
     end
+
+    #DEBUG: make the debug lines effectively infinitly long
     tempx1 = DebugLines[line_index].x1
     tempx2 = DebugLines[line_index].x2
     tempy1 = DebugLines[line_index].y1
     tempy2 = DebugLines[line_index].y2
-
     DebugLines[line_index].x1 = (tempx1 *(1+1000)/2) + (tempx2 * (1-1000)/2)
     DebugLines[line_index].y1 = (tempy1 *(1+1000)/2) + (tempy2 * (1-1000)/2)
     DebugLines[line_index].x2 = (tempx2 *(1+1000)/2) + (tempx1 * (1-1000)/2)
@@ -138,9 +164,7 @@ def hitbox_check(shape_a, shape_b)
   true
 end
 
-#puts "should be false: #{hitbox(@sqr1, @tri1)}"
-#puts "should be true:  #{hitbox(@sqr2, @tri2)}"
-
+# Move camera
 on :key_held do |event|
   if event.key == 'w'
     Camera.y -= 5
@@ -156,18 +180,23 @@ on :key_held do |event|
   end
 end
 
+# Initialize frame counter
+# resets to 0 periodically by a set amount
 $i = 0
 
-#$line = Camera::Line.new(color: 'red',
-#                         width: 5, z: 99)
-
+# "Game" loop
 update do
+  # Advance frame
   $i += 1
+
+  # Reset every 5 frames
   $i %= 5
+
+  # Update shape 1 position to mouse
   s1.x = Camera.coordinate_to_worldspace(get(:mouse_x),0)[0]
   s1.y = Camera.coordinate_to_worldspace(0, get(:mouse_y))[1]
-  $x = s1.x
-  $y = s1.y
+
+  # Check hitboxes
   a = hitbox_check(
     [[s2.x1, s2.y1],
      [s2.x2, s2.y2],
@@ -178,11 +207,8 @@ update do
    [s1.x3 + s1.x, s1.y3 + s1.y],
    [s1.x4 + s1.x, s1.y4 + s1.y]],
   )
-  if a
-    #s1.color = 'orange'
-  else
-    s1.color = 'aqua'
-  end
+
+  #DEBUG
   if $i == 0
     pp [[s2.x1, s2.y1],
         [s2.x2, s2.y2],
@@ -192,7 +218,6 @@ update do
         [s1.x2 + s1.x, s1.y2 + s1.y],
         [s1.x3 + s1.x, s1.y3 + s1.y],
         [s1.x4 + s1.x, s1.y4 + s1.y]]
-    puts a
   end
 
 end
