@@ -18,6 +18,9 @@ require 'ruby2d/camera'
 $colors = %w[blue teal green lime
              yellow orange red fuchsia]
 
+set width: 800
+set height: 800
+
 #DEBUG: used to draw, store and update debug lines
 class DebugLines
   class << self
@@ -32,9 +35,9 @@ class DebugLines
 end
 
 # The coordinates of the 2 shapes being tested for collision
-svA = { x1: 200.0, y1: 100.0,
-        x2: 200.0, y2: 200.0,
-        x3: 100.0, y3: 200.0,
+svA = { x1: 230.0, y1: 100.0,
+        x2: 200.0, y2: 250.0,
+        x3: 50.0, y3: 200.0,
         x4: 100.0, y4: 100.0 }
 
 svB = { x1: 275.0 - 275.0, y1: 175.0 - 175.0,
@@ -43,11 +46,13 @@ svB = { x1: 275.0 - 275.0, y1: 175.0 - 175.0,
         x4: 250.0 - 275.0, y4: 250.0 - 175.0 }
 
 # The 2 shapes being tested for collision
+
 sA = Camera::Quad.new(
   **svA,
   color: 'olive',
   z: 10
 )
+
 sB = Camera::Quad.new(
   **svB,
   color: 'aqua',
@@ -57,11 +62,11 @@ sB = Camera::Quad.new(
 # The hitbox logic
 def hitbox_check(shape_a, shape_b)
   # Get normals of both shapes
-  inverted = build_inverted_edges(shape_b)
-  inverted.concat(build_inverted_edges(shape_a))
+  inverted = build_inverted_edges(shape_a)
+  inverted.concat(build_inverted_edges(shape_b))
 
   #DEBUG
-  debug_outer_loop(inverted)
+  #debug_outer_loop(inverted)
 
   inverted.each_with_index do |line, line_index|
     # Determine max and min of a and b shapes
@@ -69,14 +74,14 @@ def hitbox_check(shape_a, shape_b)
     bmax, bmin = calculate_minmax(shape_b, line)
 
     #DEBUG
-    debug_inner_loop(shape_a, shape_b, line_index, amax, amin, bmax, bmin)
+    #debug_inner_loop(shape_a, shape_b, line_index, amax, amin, bmax, bmin)
 
     if ((amin <= bmax) && (amin >= bmin)) || ((bmin <= amax) && (bmin >= amin))
       #next
     else
       # The logic should end the calculations early once it detects lack of collision
       # however for debug purposes this is disabled
-      #return false
+      return false
     end
   end
   true
@@ -125,12 +130,12 @@ def debug_inner_loop(shape_a, shape_b, line_index, amax, amin, bmax, bmin)
   if line_index < shape_a.length
     DebugLines[line_index].x1 = shape_a[line_index][0]
     DebugLines[line_index].y1 = shape_a[line_index][1]
-    if shape_a[line_index].nil?
-      DebugLines[line_index].x2 = shape_a[line_index + 1][0]
-      DebugLines[line_index].y2 = shape_a[line_index + 1][1]
-    else
+    if shape_a[line_index + 1].nil?
       DebugLines[line_index].x2 = shape_a[0][0]
       DebugLines[line_index].y2 = shape_a[0][1]
+    else
+      DebugLines[line_index].x2 = shape_a[line_index + 1][0]
+      DebugLines[line_index].y2 = shape_a[line_index + 1][1]
     end
   else
     DebugLines[line_index].x1 = shape_b[line_index - shape_a.length][0]
@@ -203,8 +208,8 @@ update do
   $i %= 5
 
   # Update shape 1 position to mouse
-  sB.x = Camera.coordinate_to_worldspace(get(:mouse_x), 0)[0]
-  sB.y = Camera.coordinate_to_worldspace(0, get(:mouse_y))[1]
+  sB.x = Camera.coordinate_to_worldspace(get(:mouse_x), 0)[0] - 25
+  sB.y = Camera.coordinate_to_worldspace(0, get(:mouse_y))[1] - 75
 
   # Check hitboxes
   a = hitbox_check(
@@ -217,6 +222,12 @@ update do
      [sB.x3 + sB.x, sB.y3 + sB.y],
      [sB.x4 + sB.x, sB.y4 + sB.y]]
   )
+
+  if a
+    sB.color = 'red'
+  else
+    sB.color = 'aqua'
+  end
 
   #DEBUG
   if $i == 0
