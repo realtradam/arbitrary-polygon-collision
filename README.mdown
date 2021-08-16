@@ -1,5 +1,3 @@
-# hints and notes for Debugging
-If the shape is brought to the bottom left corner then the hitbox collision fails
+### Working implementation of SAT(Seperating Axis Theorem) in ruby
 
-# Links for the math
-see the comments at the top of `run.rb` for links that explain the math
+working code, needs to be cleaned up
