@@ -1,3 +1,6 @@
 # hints and notes for Debugging
 - Shape A for some reason is not understood by the hitbox detection correctly  
 As can be seen with the debug lines, one of the lines is drawn diagnal when it instead should of been drawn online one of the edges. The other line has been determined to be of length 0 so it is as if the points are swapped. Despite both shapes using what appear to be essentially the same code only one of the two shapes are in error. If the a and b shapes are swapped then the issue switches shapes(from a to b) so the issue doesnt appear to be with declaring the shapes but rather something in the hitbox logic.
+
+# Links for the math
+see the comments at the top of `run.rb` for links that explain the math
