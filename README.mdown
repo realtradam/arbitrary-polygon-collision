@@ -1,3 +1,4 @@
 ### Working implementation of SAT(Seperating Axis Theorem) in ruby
 
-working code, needs to be cleaned up
+It works but the math could have some optimizations and cleanup done to it. Recently ported to work with mruby-raylib bindings.
+
