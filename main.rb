@@ -70,38 +70,44 @@ class Shape
     @size = size
     @x = x
     @y = y
-    #self.points = Array.new(6) do |point_num|
-    #  { x: Math.sin(((point_num/6.0) * Math::PI * 2) + angle) * size + x,
-    #    y: Math.cos(((point_num/6.0) * Math::PI * 2) + angle) * size + y }
-    #end
     update
   end
 
   def points
     @points ||= []
   end
+
+  def sides=(sides)
+    @sides = sides
+    self.update
+  end
+
   def angle=(angle)
     @angle = angle
     self.update
   end
+
   def size=(size)
     @size = size
     self.update
   end
+
   def x=(x)
     @x = x
     self.update
   end
+
   def y=(y)
     @y = y
     self.update
   end
+
   private
   def update
     sides.times do |point_num|
       points[point_num] ||= Hash.new
-      points[point_num][:x] = Math.sin(((point_num/sides.to_f) * Math::PI * 2) + angle) * size + x
-      points[point_num][:y] = Math.cos(((point_num/sides.to_f) * Math::PI * 2) + angle) * size + y
+      points[point_num][:x] = Math.sin(((point_num/sides.to_f) * Math::PI * 2) - angle) * size + x
+      points[point_num][:y] = Math.cos(((point_num/sides.to_f) * Math::PI * 2) - angle) * size + y
     end
     [sides - points.length, 0].max.times do
       points.pop # strip extra points
@@ -109,19 +115,20 @@ class Shape
   end
 end
 
-MouseFollow = Cmp::Shape.new(obj: Shape.new(sides: 6, size: 100))
 Target = Cmp::Shape.new(obj: Shape.new(sides: 6, size: 100, x: 300, y: 300))
+MouseFollow = Cmp::Shape.new(obj: Shape.new(sides: 6, size: 100))
 
-Ent.new(
-  MouseFollow,
-  Cmp::ShapeColor.new(color: Rl::Color.dodger_blue),
-  Cmp::BorderColor.new(color: Rl::Color.dodger_blue)
-)
 
 Ent.new(
   Target,
   Cmp::ShapeColor.new(color: Rl::Color.medium_orchid),
   Cmp::BorderColor.new(color: Rl::Color.medium_orchid)
+)
+
+Ent.new(
+  MouseFollow,
+  Cmp::ShapeColor.new(color: Rl::Color.dodger_blue),
+  Cmp::BorderColor.new(color: Rl::Color.dodger_blue)
 )
 
 Sys.new('DrawShape') do
@@ -134,12 +141,14 @@ Sys.new('DrawShape') do
     Rl.draw_poly(center: Rl::Vector2.new(shape.x, shape.y),
                  radius: shape.size,
                  sides: shape.sides,
+                 rotation: shape.angle,
                  color: color_cmp.color)
     Rl.draw_poly_lines(center: Rl::Vector2.new(shape.x, shape.y),
                        radius: shape.size,
                        sides: shape.sides,
+                       rotation: shape.angle,
                        color: border_color_cmp.color,
-                       line_thickness: 7)
+                       line_thickness: shape.size/10)
     if array_spot
       "x: #{array_spot.x}".draw(x: position.x - 30, y: position.y - 20, color: Rl::Color.dark_violet)
       "y: #{array_spot.y}".draw(x: position.x - 30, y: position.y, color: Rl::Color.dark_violet)
@@ -216,6 +225,48 @@ end
 
 Rl.target_fps = 60
 Rl.while_window_open do
+  if Rl.key_pressed? 61 # plus/equal
+    if (Rl.key_down? 340) || (Rl.key_down? 344)
+      Target.obj.sides += 1 unless Target.obj.sides == 9
+    else
+      MouseFollow.obj.sides += 1 unless MouseFollow.obj.sides == 9
+    end
+  end
+  if Rl.key_pressed? 45 # minus/underscore
+    if (Rl.key_down? 340) || (Rl.key_down? 344)
+      Target.obj.sides -= 1 unless Target.obj.sides == 3
+    else
+      MouseFollow.obj.sides -= 1 unless MouseFollow.obj.sides == 3
+    end
+  end
+  if Rl.key_down? 65 # a
+    if (Rl.key_down? 340) || (Rl.key_down? 344)
+      Target.obj.angle -= (Math::PI/180) * 2
+    else
+      MouseFollow.obj.angle -= (Math::PI/180) * 2
+    end
+  end
+  if Rl.key_down? 68 # d
+    if (Rl.key_down? 340) || (Rl.key_down? 344)
+      Target.obj.angle += (Math::PI/180) * 2
+    else
+      MouseFollow.obj.angle += (Math::PI/180) * 2
+    end
+  end
+  if Rl.key_down? 87 # w
+    if (Rl.key_down? 340) || (Rl.key_down? 344)
+      Target.obj.size += 1
+    else
+      MouseFollow.obj.size += 1
+    end
+  end
+  if Rl.key_down? 83 # s
+    if (Rl.key_down? 340) || (Rl.key_down? 344)
+      Target.obj.size -= 1
+    else
+      MouseFollow.obj.size -= 1
+    end
+  end
   Rl.draw(clear_color: Rl::Color.black) do
     MouseFollow.obj.x = Rl.mouse_x
     MouseFollow.obj.y = Rl.mouse_y
