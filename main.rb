@@ -3,64 +3,9 @@ Rl.init_window(800, 600, GameName)
 
 include FECS
 
-source_shine = Rl::Rectangle.new(7,
-                                 128,
-                                 111,
-                                 128)
-source = Rl::Rectangle.new(7,
-                           0,
-                           111,
-                           128)
-
-offset_x = 100
-offset_y = 100
-
-Cmp.new('Position', x: 0, y: 0)
-#Cmp.new('Shape', radius: 50, line_thickness: 5, sides: 3)
 Cmp.new('Shape', :obj)
-Cmp.new('ArraySpot', :x, :y)
 Cmp.new('ShapeColor', :color)
 Cmp.new('BorderColor', :color)
-
-ShapeSize = 6.0 # needs to be float
-
-Sys.new('InitGrid') do
-  arry = Array.new(5) do |x|
-    Array.new(5) do |y|
-      x_thingie = 90
-      Ent.new(
-        Cmp::Position.new(
-          x: (x * x_thingie) + (y * (x_thingie/2)) + offset_x,
-          y: (y * 50) + (y * 30) + offset_y,
-        ),
-        Cmp::Shape.new(sides: 6),
-        Cmp::ArraySpot.new(x: x, y: y)
-      )
-    end
-  end
-end
-
-
-#Sys::InitGrid.call
-
-Sys.new('InitShape') do
-  xoff = 350
-  yoff = 350
-  multi = 100
-  #shape = Cmp::Shape.new(sides:6)
-  ShapeSize.to_i.times do |point|
-    Ent.new(
-      Cmp::Position.new(
-        x: Math.sin((point/ShapeSize) * Math::PI * 2) * multi + xoff,
-        y: Math.cos((point/ShapeSize) * Math::PI * 2) * multi + yoff
-      ),
-      Cmp::Shape.new(sides:ShapeSize)
-    )
-  end
-end
-
-#Sys::InitShape.call
-
 
 class Shape
   attr_reader :angle, :size, :x, :y, :sides
@@ -134,10 +79,6 @@ Ent.new(
 Sys.new('DrawShape') do
   Ent.group(Cmp::Shape, Cmp::ShapeColor, Cmp::BorderColor) do |shape_cmp, color_cmp, border_color_cmp, entity|
     shape = shape_cmp.obj
-    array_spot = false
-    #if !entity.components[Cmp::ArraySpot].nil?
-    #  array_spot = entity.component[Cmp::ArraySpot]
-    #end
     Rl.draw_poly(center: Rl::Vector2.new(shape.x, shape.y),
                  radius: shape.size,
                  sides: shape.sides,
@@ -149,10 +90,6 @@ Sys.new('DrawShape') do
                        rotation: shape.angle,
                        color: border_color_cmp.color,
                        line_thickness: shape.size/10)
-    if array_spot
-      "x: #{array_spot.x}".draw(x: position.x - 30, y: position.y - 20, color: Rl::Color.dark_violet)
-      "y: #{array_spot.y}".draw(x: position.x - 30, y: position.y, color: Rl::Color.dark_violet)
-    end
   end
 end
 
@@ -164,22 +101,14 @@ module SAT
       inverted = build_inverted_edges(shape_a)
       inverted.concat(build_inverted_edges(shape_b))
 
-      #DEBUG
-      #debug_outer_loop(inverted)
-
       inverted.each_with_index do |line, line_index|
         # Determine max and min of a and b shapes
         amax, amin = calculate_minmax(shape_a, line)
         bmax, bmin = calculate_minmax(shape_b, line)
 
-        #DEBUG
-        #debug_inner_loop(shape_a, shape_b, line_index, amax, amin, bmax, bmin)
-
         if ((amin <= bmax) && (amin >= bmin)) || ((bmin <= amax) && (bmin >= amin))
-          #next
+          next
         else
-          # The logic should end the calculations early once it detects lack of collision
-          # however for debug purposes this is disabled
           return false
         end
       end
